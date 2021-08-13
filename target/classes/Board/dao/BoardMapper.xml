@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="Board.dao.BoardDao">
+
+   <select id="selectCntAll" resultType="int" parameterType="Board.util.Paging">
+       SELECT COUNT(*) FROM board
+      WHERE 1=1 AND
+		<if test="!search.equals('')">
+			<if test="category.equals('title')">
+				b_title LIKE '%' || #{search} || '%'
+		    </if>
+			<if test="category.equals('content')">
+		        b_content  LIKE '%' || #{search} || '%'
+			</if>
+		    <if test="category.equals('totalplus')">
+		        (b_title  LIKE '%' || #{search} || '%')
+		       OR (b_content  LIKE '%' || #{search} || '%')
+		    </if>
+		 </if>
+		 <if test="search.equals('')">
+		     1=1
+		 </if>
+   </select>
+   
+   <select id="selectPageList" parameterType="Board.util.Paging" resultType="hashmap">
+    SELECT BB.* FROM(
+     SELECT rownum rnum,BOARD.* FROM (
+         SELECT rownum,B.* FROM (
+            SELECT *
+            FROM board
+            WHERE 1=1 AND
+			    <if  test="!search.equals('')">
+			    <if test="category.equals('title')">
+			        b_title  LIKE '%' || #{search} || '%'
+			    </if>
+			    <if test="category.equals('content')">
+			        b_content  LIKE '%' || #{search} || '%'
+			    </if>
+			    <if test="category.equals('totalplus')">
+			        (b_title  LIKE '%' || #{search} || '%')
+			       OR (b_content  LIKE '%' || #{search} || '%')
+			    </if>
+			 </if>
+			 <if test="search.equals('')">
+			     1=1
+			 </if>
+            ORDER BY b_no ASC
+         ) B  ORDER BY rownum DESC
+      ) BOARD 
+     )BB 
+      WHERE rnum BETWEEN #{startNo} AND #{endNo}
+</select>
+
+<insert id="insertBoard" parameterType="Board.dto.Board">
+  <selectKey order="BEFORE" resultType="int" keyProperty="bNo">
+     SELECT board_seq.nextval FROM dual
+  </selectKey>
+  
+  INSERT INTO board(b_no,b_title,b_content,b_nick,b_pw,b_originno,b_groupord,b_grouplayer,b_delete_state)
+  VALUES(#{bNo},#{bTitle},#{bContent},#{bNick},#{bPw},#{bOriginNo},#{bGroupOrd},#{bGroupLayer},'Y')
+
+</insert>
+
+<insert id="insertBoardFiles" parameterType="Board.dto.BoardFile">
+ INSERT INTO board_File(bf_fileno, b_no, bf_origin_name, bf_stored_name, bf_size, bf_content_type)
+  VALUES(board_file_seq.nextval, #{bNo}, #{bfOriginName}, #{bfStoredName}, #{bfSize}, #{bfContentType})
+</insert>
+
+<select id="selectView" parameterType="Board.dto.Board" resultType="hashmap">
+ SELECT * FROM board
+ WHERE b_no = #{bNo}
+</select>
+
+<select id="selectBygetFile" parameterType="Board.dto.Board" resultType="Board.dto.BoardFile">
+ SELECT * FROM board_File
+ WHERE b_no = #{bNo}
+</select>
+
+<update id="deleteBoard" parameterType="Board.dto.Board">
+UPDATE board
+SET B_DELETE_STATE = 'N'
+WHERE  b_no = #{bNo}
+</update>
+
+<delete id="deleteBoardFile" parameterType="Board.dto.Board">
+DELETE FROM board_File
+WHERE  b_no = #{bNo}
+</delete>
+
+<select id="selectByFileno" parameterType="Board.dto.BoardFile" resultType="Board.dto.BoardFile">
+SELECT * FROM board_File
+WHERE bf_fileno =#{bfFileno}
+</select>
+
+<select id="selectOneByBoardno" parameterType="Board.dto.Board" resultType="Board.dto.Board">
+SELECT * FROM board
+WHERE b_no = #{bNo}
+</select>
+
+
+<update id="upateBoard" parameterType="Board.dto.Board">
+UPDATE board
+SET b_nick = #{bNick}
+   ,b_pw = #{bPw}
+   ,b_title = #{bTitle}
+   ,b_content = #{bContent}
+WHERE b_no =#{bNo} 
+</update>
+
+<insert id="insertnewBoardFile" parameterType="Board.dto.BoardFile">
+INSERT INTO board_File(bf_fileno, b_no, bf_origin_name, bf_stored_name, bf_size, bf_content_type)
+  VALUES(board_file_seq.nextval, #{bNo}, #{bfOriginName}, #{bfStoredName}, #{bfSize}, #{bfContentType})
+</insert>
+
+<delete id="deleteOldFile" parameterType="int">
+DELETE FROM board_File
+WHERE bf_fileno =#{bfFileno}
+</delete>
+
+<select id="selectBycomment" parameterType="Board.dto.Board" resultType="hashmap">
+SELECT * FROM Comments
+WHERE b_no = #{bNo}
+ORDER BY c_no DESC
+</select>
+
+<insert id="insertComments" parameterType="Board.dto.Comments">
+INSERT INTO Comments(c_no,b_no,c_nick,c_pw,c_content)
+VALUES (comments_seq.nextval,#{bNo},#{cNick},#{cPw},#{cContent})
+</insert>
+
+<select id="selectCmt" parameterType="Board.dto.Comments" resultType="hashmap">
+SELECT * FROM Comments
+WHERE c_no = #{cNo}
+ORDER BY c_no DESC
+</select>
+
+<select id="selectOneComments" parameterType="Board.dto.Comments" resultType="hashmap">
+SELECT * FROM Comments
+WHERE c_no = #{cNo}
+ORDER BY c_no DESC
+</select>
+
+<update id="updateComments" parameterType="Board.dto.Comments">
+update Comments
+SET c_content = #{cContent}
+WHERE c_no =#{cNo}
+</update>
+
+<delete id="deleteComments" parameterType="Board.dto.Comments">
+ DELETE FROM Comments
+ WHERE c_no = #{cNo}
+</delete>
+
+
+
+
+
+
+
+</mapper>
